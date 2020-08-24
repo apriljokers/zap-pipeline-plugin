@@ -67,11 +67,15 @@ public class ZapArchive extends Recorder {
      */
     private boolean saveStaticFiles(File dir) {
         try {
-            String indexName = "index.html";
             String pluginName = "zap-pipeline";
-            FilePath indexFile = new FilePath(new File(
-                    Jenkins.getInstance().getPlugin(pluginName).getWrapper().baseResourceURL.getFile(), indexName));
-            indexFile.copyTo(new FilePath(new File(dir, indexName)));
+            
+            FilePath pluginBaseDir = new FilePath(new File(Jenkins.get().getPlugin(pluginName).getWrapper().baseResourceURL.getFile()));
+            for (FilePath staticFile : pluginBaseDir.list()) {
+                if (!staticFile.isDirectory()) {
+                    staticFile.copyTo(new FilePath(new FilePath(dir), staticFile.getName()));
+                }
+            }
+            
             return true;
         } catch (IOException | InterruptedException | NullPointerException e) {
             e.printStackTrace();

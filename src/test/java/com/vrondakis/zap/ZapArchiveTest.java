@@ -14,8 +14,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 public class ZapArchiveTest extends ZapTests {
@@ -25,10 +27,11 @@ public class ZapArchiveTest extends ZapTests {
     private ZapArchive zapArchiveB;
     private FilePath zapDirectoryA;
     private FilePath zapDirectoryB;
-    private ZapDriver zapDriver = new ZapDriverStub();
+    private final ZapDriver zapDriver = new ZapDriverStub();
 
 
     @Before
+    @Override
     public void setup() throws ExecutionException, InterruptedException, IOException, NullPointerException {
         super.setup();
 
@@ -47,6 +50,7 @@ public class ZapArchiveTest extends ZapTests {
     }
 
     @After
+    @Override
     public void cleanup() throws IOException, InterruptedException {
         job.delete();
     }
@@ -62,10 +66,12 @@ public class ZapArchiveTest extends ZapTests {
     public void testStaticFileSaving() throws IOException, InterruptedException {
         zapArchiveA.archiveRawReport(zapRunA, job, taskListener, "false-positives.json");
 
-        String index = new FilePath(zapDirectoryA, "index.html").readToString();
-
-        FilePath zapIndexFile = new FilePath(new File(Jenkins.getInstance().getPlugin("zap-pipeline").getWrapper().baseResourceURL.getFile(), "index.html"));
-        Assert.assertEquals(zapIndexFile.readToString(), index);
+        FilePath basePluginDir = new FilePath(new File(Jenkins.get().getPlugin("zap-pipeline").getWrapper().baseResourceURL.getFile()));
+        
+        for (FilePath staticFile : basePluginDir.list()) {
+            FilePath staticCopiedFile = new FilePath(zapDirectoryA, staticFile.getName());
+            Assert.assertEquals("Found file not copied correctly", staticCopiedFile.readToString(), staticFile.readToString());
+        }
     }
 
     @Test
